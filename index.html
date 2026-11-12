@@ -3,23 +3,265 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ClosetAI</title>
-<meta name="description" content="Få flere outfits ud af det tøj, du allerede har.">
-<link rel="stylesheet" href="style.css">
+<title>ClosetAI – outfits af det tøj, du allerede har</title>
+<meta name="description" content="ClosetAI er en personlig stylist på din iPhone. Fotografér dit tøj, og få outfitforslag til vejret og anledningen.">
+<meta property="og:title" content="ClosetAI">
+<meta property="og:description" content="Få flere outfits ud af det tøj, du allerede har.">
+<meta name="theme-color" content="#2F4A3A">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/bricolage.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face {
+  font-family: "Bricolage";
+  src: url("fonts/bricolage.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+:root {
+  --linen: #F4F1EC;
+  --paper: #FFFFFF;
+  --ink: #1F1D1A;
+  --ink-soft: #5E594F;
+  --moss: #2F4A3A;
+  --sage: #DCE5DD;
+  --brass: #B89B6A;
+  --line: #DED8CE;
+  --on-moss: #F4F1EC;
+  --on-moss-soft: #BFCDC2;
+  --step-num: #2F4A3A;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --linen: #151815;
+    --paper: #1D211E;
+    --ink: #ECE9E2;
+    --ink-soft: #A7A398;
+    --sage: #24302A;
+    --line: #2D322E;
+    --step-num: #B89B6A;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--linen);
+  color: var(--ink);
+  font: 400 17px/1.55 "Bricolage", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+a { color: inherit; text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* Top bar */
+.top { background: var(--moss); color: var(--on-moss); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 20px; padding-bottom: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 19px; letter-spacing: -0.01em; text-decoration: none; }
+.brand svg { width: 30px; height: 30px; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; color: var(--on-moss-soft); }
+.top nav a:hover { color: var(--on-moss); text-decoration: underline; }
+
+/* Hero */
+.hero { background: var(--moss); color: var(--on-moss); padding: 40px 0 0; overflow: hidden; }
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; align-items: end; }
+.hero-copy { padding-bottom: 72px; }
+h1 {
+  font-size: clamp(40px, 6.4vw, 72px);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  font-weight: 750;
+  margin: 0 0 24px;
+  text-wrap: balance;
+}
+.lede { font-size: 19px; color: var(--on-moss-soft); max-width: 30em; margin: 0 0 32px; }
+.beta {
+  display: inline-flex; flex-direction: column; gap: 2px; margin: 0;
+  border: 1.5px solid var(--brass); border-radius: 14px;
+  padding: 14px 18px; font-size: 15px; color: var(--on-moss-soft);
+}
+.beta strong { color: var(--on-moss); font-weight: 650; font-size: 16px; }
+.beta a { color: var(--on-moss); white-space: nowrap; }
+
+/* The rail */
+.rail-figure { margin: 0; }
+.rail-figure svg { display: block; width: 100%; height: auto; overflow: visible; }
+.garment { transform-box: fill-box; }
+.suggestion {
+  background: var(--paper); color: var(--ink);
+  border-radius: 18px 18px 0 0;
+  padding: 18px 22px 20px; margin-top: -6px; position: relative;
+  font-size: 15px;
+}
+.suggestion b { display: block; font-size: 16px; font-weight: 650; margin-bottom: 2px; }
+.suggestion span { color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .slide { animation: slide-in 900ms cubic-bezier(.2,.7,.2,1) both; }
+  .slide:nth-child(2) { animation-delay: 80ms; }
+  .slide:nth-child(3) { animation-delay: 160ms; }
+  .slide:nth-child(4) { animation-delay: 240ms; }
+  .slide:nth-child(5) { animation-delay: 320ms; }
+  .pick { animation: pick 500ms cubic-bezier(.3,1.4,.5,1) 1250ms both; }
+  .pick-mark { animation: fade 300ms ease 1500ms both; }
+  .suggestion { animation: rise 500ms cubic-bezier(.2,.7,.2,1) 1650ms both; }
+}
+@keyframes slide-in { from { transform: translateX(-140px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pick { from { transform: none; } to { transform: translateY(10px); } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pick { transform: translateY(10px); } }
+
+/* Steps */
+.steps { padding: 88px 0 72px; }
+h2 { font-size: clamp(28px, 3.6vw, 40px); line-height: 1.08; letter-spacing: -0.025em; font-weight: 700; margin: 0 0 40px; max-width: 18em; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; counter-reset: s; }
+.steps li { counter-increment: s; border-top: 2px solid var(--ink); padding-top: 18px; }
+.steps li::before { content: counter(s); display: block; font-size: 56px; font-weight: 300; line-height: 1; color: var(--step-num); margin-bottom: 14px; }
+.steps h3 { font-size: 20px; font-weight: 650; margin: 0 0 6px; letter-spacing: -0.01em; }
+.steps p { margin: 0; color: var(--ink-soft); max-width: 26em; }
+
+/* Privacy */
+.private { padding: 0 0 96px; }
+.private-box { background: var(--sage); border-radius: 28px; padding: 48px; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 5fr); gap: 48px; }
+.private-box h2 { margin-bottom: 16px; }
+.private-box > div > p { margin: 0; color: var(--ink-soft); }
+.private-box ul { list-style: none; margin: 0; padding: 0; }
+.private-box li { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.private-box li:first-child { padding-top: 0; }
+.private-box li:last-child { border-bottom: 0; }
+.private-box li b { display: block; font-weight: 650; }
+.private-box li span { color: var(--ink-soft); font-size: 16px; }
+
+/* Footer */
+footer { border-top: 1px solid var(--line); padding: 28px 0 40px; font-size: 15px; color: var(--ink-soft); }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+footer nav { display: flex; gap: 20px; flex-wrap: wrap; }
+
+@media (max-width: 820px) {
+  .wrap { padding: 0 16px; }
+  .top nav { gap: 16px; }
+  .hero { padding-top: 16px; }
+  .hero .wrap { grid-template-columns: 1fr; gap: 24px; }
+  .hero-copy { padding-bottom: 8px; }
+  .steps { padding: 64px 0 48px; }
+  .steps ol { grid-template-columns: 1fr; gap: 28px; }
+  .private-box { grid-template-columns: 1fr; gap: 24px; padding: 28px 22px; border-radius: 22px; }
+  .private { padding-bottom: 64px; }
+}
+@media (max-width: 420px) {
+  .top nav a.hide-sm { display: none; }
+}
+</style>
 </head>
 <body>
-<main>
-  <header><div class="logo">C</div><div><strong>ClosetAI</strong><div class="muted">Din garderobe. Din stil.</div></div></header>
-  <nav><a href="index.html">Forside</a><a href="privacy.html">Privatlivspolitik</a><a href="support.html">Support</a></nav>
 
-  <h1>Få flere outfits ud af det tøj, du allerede har.</h1>
-  <p>ClosetAI er en personlig stylist på din iPhone. Tag et foto af dit tøj, og få outfitforslag til dagen, vejret og anledningen – lavet udelukkende af det, du allerede ejer.</p>
-  <ul>
-    <li>Tilføj tøj med et foto – AI'en hjælper med at beskrive det.</li>
-    <li>Få outfits til arbejde, fest, date eller hverdag.</li>
-    <li>Dine billeder er private og kun dine.</li>
-  </ul>
-  <div class="card">ClosetAI er i lukket beta. <span class="muted">Spørgsmål? <a href="support.html">Support</a>.</span></div>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="ClosetAI forside">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#F4F1EC"/><path d="M16 9.5a2.6 2.6 0 1 1 2.6 2.6c-1.2 0-2.6.7-2.6 2.2M16 14.3 6.5 21.5h19L16 14.3Z" fill="none" stroke="#2F4A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      ClosetAI
+    </a>
+    <nav aria-label="Hovedmenu">
+      <a href="#saadan" class="hide-sm">Sådan virker det</a>
+      <a href="privacy.html">Privatliv</a>
+      <a href="support.html">Support</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <h1>Få flere outfits ud af det tøj, du allerede har.</h1>
+        <p class="lede">ClosetAI er en personlig stylist på din iPhone. Fotografér dit tøj én gang, og få forslag til dagen, vejret og anledningen. Kun med det, der hænger i dit eget skab.</p>
+        <p class="beta"><strong>Lukket beta på iPhone</strong><span>Vil du være med? Skriv til <a href="mailto:support@closet-ai.dk">support@closet-ai.dk</a></span></p>
+      </div>
+
+      <figure class="rail-figure">
+        <svg viewBox="0 0 560 330" role="img" aria-label="Et tøjstativ, hvor tre stykker tøj er valgt som et outfit">
+          <defs>
+            <g id="hanger" fill="none" stroke="#B89B6A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M-6 28a6 6 0 1 1 6 6v8"/>
+              <path d="M0 42 -40 64h80Z"/>
+            </g>
+            <path id="top-long" d="M-40 64 -14 60c4 8 24 8 28 0l26 4 14 118-16 3-10-86v118h-56v-118l-10 86-16-3Z"/>
+            <path id="top-short" d="M-40 64 -14 60c4 8 24 8 28 0l26 4 18 44-16 6-12-24v112h-56v-112l-12 24-16-6Z"/>
+            <path id="coat" d="M-40 64 -12 60 0 92l12-32 28 4 14 150-16 3-10-100v150h-56v-150l-10 100-16-3Z"/>
+            <path id="trousers" d="M-38 64h76l-4 170h-30l-4-140-4 140h-30Z"/>
+          </defs>
+
+          <line x1="4" y1="28" x2="556" y2="28" stroke="#B89B6A" stroke-width="4" stroke-linecap="round"/>
+
+          <g>
+            <g class="slide"><g transform="translate(62 0)"><use href="#hanger"/><use href="#top-long" fill="#1F2A44"/></g></g>
+            <g class="slide"><g transform="translate(166 0)"><g class="garment pick"><use href="#hanger"/><use href="#top-short" fill="#F2E8D5"/></g></g></g>
+            <g class="slide"><g transform="translate(270 0)"><g class="garment pick"><use href="#hanger"/><use href="#trousers" fill="#6B6B3A"/></g></g></g>
+            <g class="slide"><g transform="translate(374 0)"><use href="#hanger"/><use href="#top-long" fill="#6D1F2A"/></g></g>
+            <g class="slide"><g transform="translate(478 0)"><g class="garment pick"><use href="#hanger"/><use href="#coat" fill="#D9C8A9"/><path d="M0 92v140" stroke="#B49F7C" stroke-width="2"/></g></g></g>
+          </g>
+
+          <g class="pick-mark" fill="#DCE5DD" stroke="#2F4A3A" stroke-width="2.5">
+            <circle cx="166" cy="296" r="11"/><circle cx="270" cy="296" r="11"/><circle cx="478" cy="296" r="11"/>
+            <path d="M161 296l4 4 6-8M265 296l4 4 6-8M473 296l4 4 6-8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+        </svg>
+        <figcaption class="suggestion">
+          <b>Fredag aften, 12° og tørvejr</b>
+          <span>Cremefarvet skjorte, olivengrønne bukser og den beige frakke. Rolige farver, lidt pænere end hverdag.</span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="steps" id="saadan">
+    <div class="wrap">
+      <h2>Fra skab til outfit på et minut</h2>
+      <ol>
+        <li>
+          <h3>Fotografér dit tøj</h3>
+          <p>Tag et billede af hvert stykke tøj. AI'en foreslår kategori, farve og stil, og du retter det, der ikke passer.</p>
+        </li>
+        <li>
+          <h3>Vælg anledning</h3>
+          <p>Arbejde, fest, date eller bare en almindelig tirsdag. Fortæl hvad dagen byder på, og hvordan vejret er.</p>
+        </li>
+        <li>
+          <h3>Få outfits</h3>
+          <p>Du får forslag sat sammen af dit eget tøj. Gem dem, du kan lide, og sig fra over for dem, der ikke er dig.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="private">
+    <div class="wrap">
+      <div class="private-box">
+        <div>
+          <h2>Dit skab er kun dit</h2>
+          <p>Vi gemmer det, appen skal bruge for at hjælpe dig, og intet andet. Læs <a href="privacy.html">privatlivspolitikken</a>.</p>
+        </div>
+        <ul>
+          <li><b>Private billeder</b><span>Dine tøjbilleder ligger i et privat lager i EU, som kun du har adgang til.</span></li>
+          <li><b>Ingen reklamer, ingen sporing</b><span>Vi sælger ikke data og følger dig ikke rundt på nettet.</span></li>
+          <li><b>Slet alt med ét tryk</b><span>Du kan eksportere eller slette hele din konto direkte i appen.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 ClosetAI. Lavet i Danmark af William Kjær.</span>
+    <nav aria-label="Sidefod">
+      <a href="privacy.html">Privatlivspolitik</a>
+      <a href="support.html">Support</a>
+      <a href="mailto:support@closet-ai.dk">support@closet-ai.dk</a>
+    </nav>
+  </div>
+</footer>
+
 </body>
 </html>
